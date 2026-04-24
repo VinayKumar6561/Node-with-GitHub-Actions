@@ -1,0 +1,55 @@
+# This is the name of your workflow. It will appear in the "Actions" tab of your GitHub repository.
+name: Node.js CI
+
+# The 'on' key defines what events trigger this workflow.
+on:
+  # Trigger the workflow on push events but only for the main branch.
+  push:
+    branches: [ "main" ]
+  # Trigger the workflow on pull request events but only for the main branch.
+  pull_request:
+    branches: [ "main" ]
+
+# 'jobs' defines a series of tasks that run in parallel or sequentially.
+jobs:
+  # This job is named 'build-and-test'.
+  build-and-test:
+    # 'runs-on' specifies the type of machine the job will run on.
+    # 'ubuntu-latest' is a standard Linux virtual machine provided by GitHub.
+    runs-on: ubuntu-latest
+
+    # 'steps' are a sequence of tasks that make up the job.
+    steps:
+    # 1. Checkout the repository code into the virtual machine.
+    # 'uses' calls an existing action (like a plugin) created by the community.
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 2. Set up Node.js environment on the virtual machine.
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        # Specifies the version of Node.js to use.
+        node-version: '20'
+        # 'cache' speeds up the installation step by storing dependencies.
+        cache: 'npm'
+
+    # 3. Install the project's dependencies specified in package.json.
+    - name: Install dependencies
+      run: npm install
+
+    # 4. Run the tests. (Note: Since we use 'npm test', it runs the script in package.json)
+    - name: Run tests
+      run: npm test
+
+  # This job builds the Docker image to ensure it builds correctly.
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: build-and-test # Only run this if 'build-and-test' passes.
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      # This runs the standard docker build command in the virtual machine.
+      run: docker build -t node-api-app .
